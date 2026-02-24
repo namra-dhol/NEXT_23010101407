@@ -27,7 +27,7 @@ export function proxy(req: NextRequest) {
   }
 }
 
-// Only apply to your tickets API
+
 export const config = {
-  matcher: ["/api/tickets/:path*"], 
+  matcher: ["/api/tickets/:path*", "/api/comment/:path*"],
 };
