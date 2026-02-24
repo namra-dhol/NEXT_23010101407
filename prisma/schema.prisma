@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model roles {
+  id    Int        @id @default(autoincrement())
+  name  roles_name @unique(map: "name") @default(USER)
+  users users[]
+}
+
+model ticket_comments {
+  id         Int       @id @default(autoincrement())
+  ticket_id  Int?
+  user_id    Int?
+  comment    String    @db.Text
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  tickets    tickets?  @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "ticket_comments_ibfk_1")
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ticket_comments_ibfk_2")
+
+  @@index([ticket_id], map: "ticket_id")
+  @@index([user_id], map: "user_id")
+}
+
+model ticket_status_logs {
+  id         Int                           @id @default(autoincrement())
+  ticket_id  Int?
+  old_status ticket_status_logs_old_status
+  new_status ticket_status_logs_new_status
+  changed_by Int?
+  changed_at DateTime?                     @default(now()) @db.Timestamp(0)
+  users      users?                        @relation(fields: [changed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ticket_status_logs_ibfk_1")
+  tickets    tickets?                      @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "ticket_status_logs_ibfk_2")
+
+  @@index([changed_by], map: "changed_by")
+  @@index([ticket_id], map: "ticket_id")
+}
+
+model tickets {
+  id                 Int                  @id @default(autoincrement())
+  title              String               @db.VarChar(255)
+  description        String               @db.Text
+  status             tickets_status?      @default(OPEN)
+  priority           tickets_priority?    @default(MEDIUM)
+  created_by         Int
+  created_at         DateTime?            @default(now()) @db.Timestamp(0)
+  ticket_comments    ticket_comments[]
+  ticket_status_logs ticket_status_logs[]
+  users              users                @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tickets_ibfk_1")
+
+  @@index([created_by], map: "created_by")
+}
+
+model users {
+  id                 Int                  @id @default(autoincrement())
+  name               String               @db.VarChar(255)
+  email              String               @unique(map: "email") @db.VarChar(255)
+  password           String               @db.VarChar(255)
+  role_id            Int
+  created_at         DateTime?            @default(now()) @db.Timestamp(0)
+  ticket_comments    ticket_comments[]
+  ticket_status_logs ticket_status_logs[]
+  tickets            tickets[]
+  roles              roles                @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_ibfk_1")
+
+  @@index([role_id], map: "role_id")
+}
+
+enum roles_name {
+  MANAGER
+  SUPPORT
+  USER
+}
+
+enum ticket_status_logs_old_status {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ticket_status_logs_new_status {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum tickets_status {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum tickets_priority {
+  LOW
+  MEDIUM
+  HIGH
+}
